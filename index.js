@@ -40,6 +40,12 @@ sequelize
 app.get("/films/:id/recommendations", getFilmRecommendations);
 
 // ROUTE HANDLER
-function getFilmRecommendations(req, res) {}
+function getFilmRecommendations(req, res) {
 
+}
+app.get("*", (req, res) => {
+  res.status(404).json({
+    message: '"message" key missing'
+  })
+});
 module.exports = app;
