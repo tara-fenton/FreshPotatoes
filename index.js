@@ -2,6 +2,7 @@ const sqlite = require("sqlite"),
   Sequelize = require("sequelize"),
   request = require("request"),
   express = require("express"),
+  moment = require('moment'),
   app = express();
 
 const {
@@ -76,28 +77,39 @@ app.get("/films/:id/recommendations", getFilmRecommendations);
 
 // ROUTE HANDLER
 function getFilmRecommendations(req, res) {
-  // WORKS
-  // sequelize
-  // .query('SELECT * FROM genres', { type: Sequelize.QueryTypes.SELECT })
-  // .then(genre => {
-  //   res.json(genre);
-  // });
 
-  Film.findById("10306", {})
-    .then(genre => {
-      console.log(genre.title);
-      //res.send(genre);
+  // find the film from the id in the params in the route
+  Film.findById(req.params.id, {})
+    .then(film => {
+
+      // use moment.js to calculate range of years +/- 15 years
+      const releaseDate = moment(film.release_date);
+      const startDate = releaseDate.subtract('years', 15).format('YYYY-MM-DD');
+      const endDate = releaseDate.add('years', 15).format('YYYY-MM-DD');
+
+          Film.findAll({
+            where: {
+              genre_id: film.genre_id,
+              release_date: {
+                $between: [startDate, endDate]
+              }
+            },
+            order: ['id']
+          }).then(function (films){
+            // map the film ids
+            const film_ids = films.map(film => {
+                  console.log(film.id);
+                  // return film.id
+                });
+          })
+
+        .catch(error => {
+          console.log(error);
+        })
+
     })
     .catch(error => {
-      console.log(error);
-    });
-  Genre.findById("2", {})
-    .then(genre => {
-      console.log(genre.name);
-      res.send(genre);
-    })
-    .catch(error => {
-      console.log(error);
+      console.log("film error: ", error);
     });
 }
 // handles missing routes
