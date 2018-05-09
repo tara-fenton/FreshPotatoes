@@ -115,12 +115,36 @@ function getFilmRecommendations(req, res) {
               return review.reviews.length >= 5;
             });
 
+            // An average rating greater than 4.0
+            const reviewsAverage = reviewsOverFive.map(review => {
+                // get the total of the review ratings
+                const total = review.reviews.reduce((sum, val) => {
+                  return sum + val.rating;
+                }, 0);
+                // get the average from the the total ratings
+                const averageRating = total / review.reviews.length;
+                // set it to the review
+                review.average_rating = averageRating;
+
+                return review;
+              });
+                // An average rating greater than 4.0
+              const reviewesOverFourAverage = reviewsAverage.filter(review => {
+                return review.average_rating > 4;
+              });
+
+              // map the ids to use in the recommendations
+              const reviewIds = reviewesOverFourAverage.map(film => {
+                return film.film_id;
+              });
+
+
             res.json({
-              recommendations: reviewsOverFive
+              recommendations: reviewesOverFourAverage  
             });
 
 
-            // An average rating greater than 4.0
+
           });
         })
 
