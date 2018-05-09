@@ -2,7 +2,7 @@ const sqlite = require("sqlite"),
   Sequelize = require("sequelize"),
   request = require("request"),
   express = require("express"),
-  moment = require('moment'),
+  moment = require("moment"),
   app = express();
 
 const {
@@ -77,36 +77,56 @@ app.get("/films/:id/recommendations", getFilmRecommendations);
 
 // ROUTE HANDLER
 function getFilmRecommendations(req, res) {
-
   // find the film from the id in the params in the route
   Film.findById(req.params.id, {})
     .then(film => {
-
       // use moment.js to calculate range of years +/- 15 years
       const releaseDate = moment(film.release_date);
-      const startDate = releaseDate.subtract('years', 15).format('YYYY-MM-DD');
-      const endDate = releaseDate.add('years', 15).format('YYYY-MM-DD');
+      const startDate = releaseDate.subtract("years", 15).format("YYYY-MM-DD");
+      const endDate = releaseDate.add("years", 15).format("YYYY-MM-DD");
 
-          Film.findAll({
-            where: {
-              genre_id: film.genre_id,
-              release_date: {
-                $between: [startDate, endDate]
-              }
-            },
-            order: ['id']
-          }).then(function (films){
-            // map the film ids
-            const film_ids = films.map(film => {
-                  console.log(film.id);
-                  // return film.id
+      // Find all the films with The same genre as the parent film and
+      // Been released within 15 years, before or after the parent film
+      // A sort order based on film id (order by film id)
+      Film.findAll({
+        where: {
+          genre_id: film.genre_id,
+          release_date: {
+            $between: [startDate, endDate]
+          }
+        },
+        order: ["id"]
+      })
+        .then(function(films) {
+          // map the film ids to create the ids string to use in the API call
+          const film_ids = films.map(film => {
+            return film.id;
+          });
+
+          const film_ids_api = film_ids.join(',');
+
+          // call the reviews API with the ids
+          request(`${API}?films=${film_ids_api}`, (err, response, body) => {
+
+           const reviewsJSON = JSON.parse(body);
+            console.log(JSON.parse(body));
+
+            // A minimum of 5 reviews
+            const reviewsOverFive = reviewsJSON.filter(review => {
+              return review.reviews.length >= 5;
+            });
+
+            res.json({
+                  recommendations: reviewsOverFive
                 });
-          })
+            // console.log('reviewedFilmsOverFive', reviewsOverFive.length);
+            // An average rating greater than 4.0
+          });
+        })
 
         .catch(error => {
           console.log(error);
-        })
-
+        });
     })
     .catch(error => {
       console.log("film error: ", error);
