@@ -83,13 +83,16 @@ function getFilmRecommendations(req, res) {
   Film.findById(req.params.id, {})
     .then(film => {
       // use moment.js to calculate range of years +/- 15 years
-      const releaseDate = moment(film.release_date);
+      let releaseDate = moment(film.release_date);
+      console.log('releaseDate ',releaseDate);
       const startDate = releaseDate.subtract("years", 15).format("YYYY-MM-DD");
+      releaseDate = moment(film.release_date);
       const endDate = releaseDate.add("years", 15).format("YYYY-MM-DD");
+      console.log('startDate ',startDate);
+      console.log('endDate ',endDate);
 
       // find the genre name for the recommended films
       Genre.findById(film.genre_id).then(genre => {
-
 
       // Find all the films with The same genre as the parent film and
       // Been released within 15 years, before or after the parent film
